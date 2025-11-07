@@ -1,0 +1,130 @@
+.orders-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+}
+
+.order-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.status {
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 8px;
+  text-transform: capitalize;
+}
+
+.status.chờ xử lý {
+  background: #fff4e5;
+  color: #d9822b;
+}
+
+.status.đang giao {
+  background: #e0f3ff;
+  color: #007acc;
+}
+
+.status.hoàn thành {
+  background: #e6ffed;
+  color: #2c974b;
+}
+
+.product-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #eee;
+  padding: 10px 0;
+}
+
+.product-item img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+.status {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  color: white;
+}
+
+/* Màu trạng thái */
+.status.pending {
+  background-color: #f0ad4e; /* vàng */
+}
+
+.status.shipping {
+  background-color: #0275d8; /* xanh dương */
+}
+
+.status.completed {
+  background-color: #28a745; /* xanh lá cây */
+}
+
+.status.other {
+  background-color: #6c757d; /* xám */
+}
+.product-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #eee;
+  padding: 10px 0;
+}
+
+.product-item img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-right: 15px;
+}
+
+.product-details {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.product-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.review-btn {
+  background-color: #28a745; /* xanh lá */
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.review-btn:hover {
+  background-color: #218838;
+  transform: scale(1.05);
+}
+
+.review-btn:active {
+  background-color: #1e7e34;
+  transform: scale(0.98);
+}
