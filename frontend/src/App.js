@@ -5,6 +5,8 @@ import Home from "./pages/Home.js";
 import Shop from "./pages/Shop.js";
 import Detail from "./pages/Detail.js";
 import Login from "./pages/Login.js";   // ⬅️ Thêm dòng này
+import Register from "./pages/Register.js";
+import ForgotPassword from "./pages/ForgotPassword.js";
 import Cart from "./pages/Cart.js";
 import CheckoutPage from "./pages/CheckoutPage.js";
 import OrdersPage from "./pages/OrdersPage";
@@ -17,6 +19,8 @@ function App() {
         <Route path="/shop" element={<Shop />} />
         <Route path="/detail/:id" element={<Detail />} />
         <Route path="/login" element={<Login />} /> {/* ⬅️ Thêm route */}
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/orders" element={<OrdersPage />} />

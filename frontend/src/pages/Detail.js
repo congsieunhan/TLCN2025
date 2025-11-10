@@ -2,22 +2,26 @@ import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "axios";
 import "./Detail.css";
+import { API_BASE_URL, IMG_BASE_URL, IMG_PLACEHOLDER_LARGE as IMG_PLACEHOLDER } from "../config";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState("");
-  const [activeTab, setActiveTab] = useState("details");
+  const [selectedImage, setSelectedImage] = useState(IMG_PLACEHOLDER);
+  const [activeTab, setActiveTab] = useState("details"); // Dữ liệu tab
 
   useEffect(() => {
     axios
-      .get(`http://127.0.0.1:8000/api/products/${id}/`)
+      .get(`${IMG_BASE_URL}/api/products/${id}/`)
       .then((res) => {
         setProduct(res.data);
-        if (res.data.hinh_anh_list?.length > 0) {
-          setSelectedImage(`http://127.0.0.1:8000${res.data.hinh_anh_list[0].hinh_anh}`);
-        }
+        
+        // Thiết lập ảnh chính và xử lý URL
+        const firstImage = res.data.hinh_anh_list?.[0]?.hinh_anh;
+        const url = firstImage ? `${IMG_BASE_URL}${firstImage}` : IMG_PLACEHOLDER;
+        setSelectedImage(url);
+        
         setLoading(false);
       })
       .catch((err) => {
@@ -27,24 +31,62 @@ const ProductDetail = () => {
   }, [id]);
 
   if (loading) return <p className="loading">Đang tải...</p>;
-  if (!product) return <p>Không tìm thấy sản phẩm.</p>;
+  if (!product) return <p className="not-found">Không tìm thấy sản phẩm.</p>;
+
+  // Hàm xử lý lỗi ảnh
+  const handleImageError = (e) => {
+    if (e.target.src !== IMG_PLACEHOLDER) {
+      e.target.src = IMG_PLACEHOLDER;
+    }
+  };
+  
+  // Hàm thêm vào giỏ hàng
+  const handleAddToCart = () => {
+    try {
+      const userStr = localStorage.getItem('user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      if (!user) {
+        alert('Vui lòng đăng nhập trước khi thêm giỏ hàng');
+        return;
+      }
+      axios.post(`${API_BASE_URL}/giohang/`, {
+        ten_dang_nhap: user.ten_dang_nhap,
+        ma_sp: Number(id),
+        so_luong: 1,
+      }).then(() => {
+        alert(`Đã thêm sản phẩm: ${product.ten_sp} vào giỏ hàng!`);
+      }).catch((err) => {
+        const msg = err?.response?.data?.error || 'Không thể thêm vào giỏ hàng';
+        alert(msg);
+      });
+    } catch (e) {
+      alert('Lỗi không xác định khi thêm giỏ hàng');
+    }
+  }
 
   return (
     <div className="product-detail-container">
-      {/* Khối thông tin chính */}
+      
+      {/* 📍 Khối thông tin chính: Ảnh và Chi tiết */}
       <div className="main-info">
         <div className="product-images">
-          <img src={selectedImage} alt={product.ten_sp} className="main-image" />
+          <img 
+            src={selectedImage} 
+            alt={product.ten_sp} 
+            className="main-image" 
+            onError={handleImageError} // Xử lý lỗi ảnh chính
+          />
           <div className="thumbnail-container">
             {product.hinh_anh_list?.map((img) => (
               <img
                 key={img.id}
-                src={`http://127.0.0.1:8000${img.hinh_anh}`}
+                src={`${IMG_BASE_URL}${img.hinh_anh}`}
                 alt={img.mo_ta}
-                className={`thumbnail ${selectedImage === `http://127.0.0.1:8000${img.hinh_anh}` ? "active" : ""}`}
+                className={`thumbnail ${selectedImage === `${IMG_BASE_URL}${img.hinh_anh}` ? "active" : ""}`}
                 onClick={() =>
-                  setSelectedImage(`http://127.0.0.1:8000${img.hinh_anh}`)
+                  setSelectedImage(`${IMG_BASE_URL}${img.hinh_anh}`)
                 }
+                onError={handleImageError} // Xử lý lỗi ảnh thumbnail
               />
             ))}
           </div>
@@ -52,20 +94,26 @@ const ProductDetail = () => {
 
         <div className="product-info">
           <h2>{product.ten_sp}</h2>
-          <p className="brand">Hãng: {product.hang_sx}</p>
+          <p className="brand">Hãng: <strong>{product.hang_sx}</strong></p>
           <p className="price">{Number(product.gia).toLocaleString()} đ</p>
-          <p className="status">Tình trạng: {product.tinh_trang}</p>
-          <p className="stock">Còn lại: {product.so_luong_ton}</p>
-          <p className="storage">{product.thong_so}</p>
+          <p className="status">Tình trạng: <strong>{product.tinh_trang}</strong></p>
+          <p className="stock">Còn lại: <strong>{product.so_luong_ton}</strong></p>
+          <p className="storage">Thông số: <em>{product.thong_so || "Đang cập nhật"}</em></p>
 
           <div className="actions">
-            <button className="add-to-cart">🛒 Thêm vào giỏ hàng</button>
-            <Link to="/" className="back-btn">⬅️ Quay lại cửa hàng</Link>
+            <button 
+                className="add-to-cart" 
+                onClick={handleAddToCart}
+                disabled={product.so_luong_ton <= 0}
+            >
+                🛒 Thêm vào giỏ hàng
+            </button>
+            <Link to="/shop" className="back-btn">⬅️ Quay lại cửa hàng</Link>
           </div>
         </div>
       </div>
 
-      {/* Phần tab nội dung ở dưới */}
+      {/* 📍 Phần tab nội dung ở dưới */}
       <div className="tabs-section">
         <div className="tabs">
           <button
@@ -83,8 +131,10 @@ const ProductDetail = () => {
         </div>
 
         <div className="tab-content">
+          {/* Thông tin chi tiết */}
           <div className={`tab-pane ${activeTab === "details" ? "active" : ""}`}>
-            <h3>Thông tin chi tiết</h3>
+            <h3>Thông số kỹ thuật</h3>
+            {/* Đây là dữ liệu giả lập, bạn nên thay thế bằng dữ liệu từ API */}
             <ul className="product-details-list">
               <li><strong>Màn hình:</strong> 6.7 inch Super Retina XDR, tần số quét 120Hz</li>
               <li><strong>Camera:</strong> 48MP (chính), 12MP (ultra wide), 12MP (telephoto)</li>
@@ -94,6 +144,7 @@ const ProductDetail = () => {
             </ul>
           </div>
 
+          {/* Đánh giá */}
           <div className={`tab-pane ${activeTab === "reviews" ? "active" : ""}`}>
             <h3>Đánh giá sản phẩm</h3>
             <p>Hiện chưa có đánh giá nào cho sản phẩm này.</p>

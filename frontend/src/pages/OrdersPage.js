@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { API_BASE_URL, IMG_BASE_URL } from "../config";
 import "./OrdersPage.css";
 
 export default function OrdersPage() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
-    const tenDangNhap = "vana"; // 🧍 Thay bằng tên tài khoản đăng nhập thực tế
+    const user = (() => {
+        try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
+    })();
 
     // 📦 Lấy danh sách đơn hàng từ backend
     useEffect(() => {
-        fetch(`http://127.0.0.1:8000/api/donhang/?ten_dang_nhap=${tenDangNhap}`)
+        if (!user) { setLoading(false); return; }
+        fetch(`${API_BASE_URL}/donhang/?ten_dang_nhap=${user.ten_dang_nhap}`)
             .then((res) => res.json())
             .then((data) => {
                 setOrders(Array.isArray(data) ? data : []);
@@ -19,7 +23,7 @@ export default function OrdersPage() {
                 console.error("Lỗi khi tải đơn hàng:", err);
                 setLoading(false);
             });
-    }, []);
+    }, [user]);
 
     // 💬 Hàm xử lý đánh giá từng sản phẩm
     const handleReview = async (ma_sp, ten_sp) => {
@@ -32,11 +36,12 @@ export default function OrdersPage() {
         const noi_dung = prompt("📝 Nhập nội dung đánh giá của bạn (tuỳ chọn):");
 
         try {
-            const res = await fetch("http://127.0.0.1:8000/api/danh-gia/", {
+            if (!user) { alert('Vui lòng đăng nhập'); return; }
+            const res = await fetch(`${API_BASE_URL}/danh-gia/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    ten_dang_nhap: tenDangNhap,
+                    ten_dang_nhap: user.ten_dang_nhap,
                     ma_sp,
                     so_sao,
                     noi_dung,
@@ -58,6 +63,15 @@ export default function OrdersPage() {
     if (loading) return <div className="loading">⏳ Đang tải đơn hàng...</div>;
 
     // ❌ Không có đơn hàng
+    if (!user) {
+        return (
+            <div className="no-orders">
+                <h3>Vui lòng đăng nhập để xem đơn hàng</h3>
+                <Link to="/login">Đăng nhập</Link>
+            </div>
+        );
+    }
+
     if (orders.length === 0)
         return (
             <div className="no-orders">
@@ -110,7 +124,7 @@ export default function OrdersPage() {
                         {order.chi_tiet.map((ct, i) => (
                             <div key={i} className="product-item">
                                 <img
-                                    src={`http://127.0.0.1:8000${ct.san_pham.hinh_anh}`}
+                                    src={`${IMG_BASE_URL}${ct.san_pham.hinh_anh}`}
                                     alt={ct.san_pham.ten_sp}
                                 />
                                 <div className="product-details">
@@ -125,9 +139,7 @@ export default function OrdersPage() {
                                     {order.trang_thai === "Đã hoàn thành" && (
                                         <button
                                             className="review-btn"
-                                            onClick={() =>
-                                                handleReview(ct.san_pham.ma_sp, ct.san_pham.ten_sp)
-                                            }
+                                            onClick={() => handleReview(ct.san_pham.ma_sp, ct.san_pham.ten_sp)}
                                         >
                                             ⭐ Đánh giá
                                         </button>

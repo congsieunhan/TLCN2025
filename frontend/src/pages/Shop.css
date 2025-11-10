@@ -1,9 +1,16 @@
 
+.card {
+  overflow: hidden; /* Ngăn nội dung tràn khỏi card */
+}
+
 .card-img-top {
+  display: block;
   width: 100%;
-  height: 200px;          /* ✅ chiều cao cố định */
-  object-fit: contain;    /* giữ nguyên tỉ lệ, không méo */
-  padding: 10px;
+  height: 220px;            /* Khung ảnh đồng nhất */
+  object-fit: contain;      /* Hiển thị toàn bộ ảnh, không crop */
+  object-position: center;  /* Căn giữa ảnh trong khung */
+  background-color: #f8f9fa;/* Nền nhạt cho vùng thừa */
+  padding: 8px;             /* Khoảng cách viền ảnh cho dễ nhìn */
 }
 .card.h-100 {
   display: flex;

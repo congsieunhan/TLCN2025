@@ -11,10 +11,14 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv # Import thư viện dotenv
 import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Tải biến môi trường từ file .env ở gốc project
+# BASE_DIR hiện trỏ tới thư mục 'backend', nên .env nằm ở cấp trên
+load_dotenv(os.path.join(BASE_DIR.parent, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -25,7 +29,10 @@ SECRET_KEY = 'django-insecure-us*gebhnpp!8qcj^1n=f&$ok&f4!m86=2xl@#fk-p&k+p3hci$
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+]
 
 
 # Application definition
@@ -95,7 +102,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'tlcn2025',       # tên database trong MySQL
         'USER': 'root',           # user MySQL của bạn
-        'PASSWORD': '070204',   # mật khẩu MySQL
+        'PASSWORD': '123456',   # mật khẩu MySQL
         'HOST': '127.0.0.1',      # hoặc 'localhost'
         'PORT': '3306',           # cổng MySQL mặc định
         'OPTIONS': {

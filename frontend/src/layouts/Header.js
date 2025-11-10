@@ -1,20 +1,38 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import "./Header.css";
 import logo from "../assets/logo.png"; // import ảnh từ thư mục assets
 
 function Header() {
+  const [user, setUser] = useState(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    try {
+      // Lấy thông tin user từ localStorage khi component render hoặc khi location thay đổi
+      const u = localStorage.getItem("user");
+      setUser(u ? JSON.parse(u) : null);
+    } catch (e) {
+      setUser(null);
+    }
+  }, [location]);
+
+  const handleLogout = () => {
+    // Xóa user khỏi localStorage
+    localStorage.removeItem("user");
+    setUser(null);
+    // Chuyển hướng về trang chủ
+    window.location.href = "/";
+  };
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-white sticky-top">
-      <div className="container-fluid">
-        <Link className="navbar-brand" to="/">
-          <img
-            src={logo}
-            alt="Logo"
-            style={{ width: "160px", height: "100px", marginLeft: "60px" }}
-          />
+    <nav className="navbar navbar-expand-lg header-navbar sticky-top">
+      <div className="container">
+        <Link className="navbar-brand header-brand" to="/">
+          <img src={logo} alt="Logo" className="header-logo" />
         </Link>
+
         <button
           className="navbar-toggler"
           type="button"
@@ -27,101 +45,88 @@ function Header() {
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {/* Search form */}
-        <form className="d-flex" style={{ marginLeft: "100px" }}>
-          <input
-            className="form-control me-2"
-            type="search"
-            placeholder="Search"
-            aria-label="Search"
-          />
-          <button
-            className="btn btn-outline-dark btn-outline-success rounded-circle"
-            type="submit"
-          >
-            <i className="bi bi-search"></i>
-          </button>
-        </form>
+        <div className="collapse navbar-collapse" id="navbarSupportedContent">
+          {/* Search */}
+          <form className="header-search d-flex my-2 my-lg-0 mx-lg-3">
+            <input
+              className="form-control"
+              type="search"
+              placeholder="Tìm sản phẩm..."
+              aria-label="Search"
+            />
+            <button className="btn btn-dark ms-2" type="submit">
+              <i className="bi bi-search"></i>
+            </button>
+          </form>
 
-        {/* Menu */}
-        <div
-          className="collapse navbar-collapse"
-          id="navbarSupportedContent"
-          style={{ marginLeft: "300px" }}
-        >
-          <ul className="navbar-nav me-auto mb-2 mb-lg-0">
+          {/* Menu */}
+          <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center">
             <li className="nav-item">
-              <Link className="nav-link active menu-link" aria-current="page" to="/">
+              <Link className={`nav-link menu-link ${location.pathname === '/' ? 'active' : ''}`} to="/">
                 Home
               </Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link menu-link" to="/shop">
+              <Link className={`nav-link menu-link ${location.pathname.startsWith('/shop') ? 'active' : ''}`} to="/shop">
                 Shop
               </Link>
             </li>
             <li className="nav-item dropdown">
-              <a
-                className="nav-link dropdown-toggle menu-link"
-                href="#"
-                id="navbarDropdown"
-                role="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                Dropdown
+              <a className="nav-link dropdown-toggle menu-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                More
               </a>
-              <ul className="dropdown-menu" aria-labelledby="navbarDropdown">
+              <ul className="dropdown-menu">
                 <li><Link className="dropdown-item" to="/about">About</Link></li>
                 <li><a className="dropdown-item" href="#">Another action</a></li>
                 <li><hr className="dropdown-divider" /></li>
                 <li><a className="dropdown-item" href="#">Something else here</a></li>
               </ul>
             </li>
-            <li className="nav-item">
-              <a className="nav-link disabled menu-link" href="#" tabIndex="-1" aria-disabled="true">
-                Disabled
-              </a>
-            </li>
           </ul>
-        </div>
 
-        {/* Icons (cart, heart, orders, user) */}
-        <div style={{ marginRight: "60px", display: "flex", gap: "15px" }}>
-          {/* 🛒 Giỏ hàng */}
-          <div className="position-relative d-inline-block">
+          {/* Icons */}
+          <div className="header-icons d-flex align-items-center ms-lg-3 gap-2">
+            {/* Cart */}
             <Link to="/cart" className="btn btn-outline-dark position-relative">
               <i className="bi bi-cart"></i>
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark">
-                3
-              </span>
+              <span className="header-badge badge bg-dark">3</span>
             </Link>
-          </div>
 
-          {/* ❤️ Yêu thích */}
-          <div className="position-relative d-inline-block">
+            {/* Wishlist */}
             <button className="btn btn-outline-dark position-relative" type="button">
               <i className="bi bi-heart"></i>
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark">
-                5
-              </span>
+              <span className="header-badge badge bg-dark">5</span>
             </button>
-          </div>
 
-          {/* 📦 Quản lý đơn hàng */}
-          <div className="position-relative d-inline-block">
-            <Link to="/orders" className="btn btn-outline-dark position-relative">
+            {/* Orders */}
+            <Link to="/orders" className="btn btn-outline-dark position-relative d-none d-lg-inline-flex">
               <i className="bi bi-clipboard-check"></i>
-              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-dark">
-                2
-              </span>
             </Link>
-          </div>
 
-          {/* 👤 Người dùng */}
-          <button className="btn btn-outline-dark" type="button">
-            <i className="bi bi-person"></i>
-          </button>
+            {/* User */}
+            {user ? (
+              <div className="dropdown">
+                <button className="btn btn-outline-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <i className="bi bi-person"></i>
+                  <span className="ms-1 d-none d-sm-inline">{user.ten_dang_nhap}</span>
+                </button>
+                <ul className="dropdown-menu dropdown-menu-end">
+                  <li><span className="dropdown-item-text">Xin chào, {user.ten_dang_nhap}</span></li>
+                  <li><hr className="dropdown-divider"/></li>
+                  <li><button className="dropdown-item" onClick={handleLogout}>Đăng xuất</button></li>
+                </ul>
+              </div>
+            ) : (
+              <div className="btn-group">
+                <Link to="/login" className="btn btn-outline-dark" type="button">
+                  <i className="bi bi-person"></i>
+                </Link>
+                <Link to="/register" className="btn btn-dark" type="button">
+                  Đăng ký
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </nav>

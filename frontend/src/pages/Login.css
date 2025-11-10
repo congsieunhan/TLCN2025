@@ -6,59 +6,162 @@
   font-family: Arial, sans-serif;
 }
 
+/* Biến màu chủ đạo */
+:root {
+  --card-bg: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --primary: #111827;
+  --primary-2: #0b1220;
+  --ring: rgba(17, 24, 39, 0.15);
+  --border: #e5e7eb;
+}
+
+/* Toàn trang */
 .login-page {
-  background-color: #fff; /* nền trắng */
+  background-color: #fff;
   height: 100vh;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  background: radial-gradient(1200px 600px at 10% 10%, #eef2ff 0%, transparent 60%),
+              radial-gradient(1000px 500px at 90% 0%, #f5f3ff 0%, transparent 60%),
+              linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
+  padding: 24px;
 }
 
+/* Container chính */
 .login-container {
-  border: 2px solid #000; /* viền đen */
-  padding: 40px;
-  border-radius: 10px;
-  width: 300px;
-  text-align: center;
-  background-color: #fff;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  width: min(90vw, 420px);
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: left;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.08),
+    0 4px 6px -2px rgba(0, 0, 0, 0.04);
 }
 
+/* Container rộng hơn cho form đăng ký */
+.register-container {
+  width: min(92vw, 720px);
+}
+
+/* Tiêu đề */
 .login-container h2 {
-  margin-bottom: 20px;
+  margin-bottom: 18px;
   color: #000;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  text-align: center;
 }
 
+/* Input */
 .login-container input[type="text"],
+.login-container input[type="email"],
+.login-container input[type="tel"],
 .login-container input[type="password"] {
   width: 100%;
-  padding: 10px;
-  margin: 10px 0;
-  border: 2px solid #000; /* viền đen */
-  border-radius: 5px;
+  padding: 12px 14px;
+  margin: 8px 0 14px;
+  border: 1.4px solid var(--border);
+  border-radius: 10px;
   background-color: #fff;
-  color: #000;
-  font-size: 16px;
+  color: var(--text);
+  font-size: 15px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.02s ease;
+}
+
+.login-container input::placeholder {
+  color: #9ca3af;
 }
 
 .login-container input:focus {
   outline: none;
-  border-color: #333;
+  border-color: #c7d2fe;
+  box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.12),
+              0 1px 0 0 var(--ring) inset;
 }
 
+/* Nút chính */
 .login-container button {
   width: 100%;
-  padding: 10px;
-  margin-top: 15px;
-  border: none;
-  border-radius: 5px;
-  background-color: #000; /* nút đen */
-  color: #fff; /* chữ trắng */
-  font-size: 16px;
+  padding: 12px 14px;
+  margin-top: 8px;
+  border: 1px solid #0f172a;
+  border-radius: 10px;
+  background: linear-gradient(180deg, var(--primary) 0%, var(--primary-2) 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: transform 0.06s ease, filter 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 8px 16px -6px rgba(0, 0, 0, 0.25);
 }
 
 .login-container button:hover {
+  filter: brightness(1.05);
   background-color: #333;
+}
+
+.login-container button:active {
+  transform: translateY(1px);
+}
+
+/* Lưới cho form đăng ký */
+.register-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.register-form input {
+  margin: 0;
+}
+
+.register-form button {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+
+/* Thông báo lỗi / thành công */
+.form-msg {
+  margin: 6px 2px 0;
+  font-size: 14px;
+}
+
+.form-msg.error {
+  color: #dc2626;
+}
+
+.form-msg.success {
+  color: #16a34a;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .register-form {
+    grid-template-columns: 1fr;
+  }
+  .register-container {
+    width: 100%;
+  }
+}
+
+/* Link màu xanh dương nổi bật */
+.login-container a {
+  color: #1e90ff; /* xanh dương nhẹ, kiểu Facebook */
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.login-container a:hover {
+  color: #0b5ed7; /* xanh đậm khi hover */
+  text-decoration: underline;
 }

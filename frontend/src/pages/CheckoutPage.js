@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { API_BASE_URL, IMG_BASE_URL } from "../config";
 import "./Checkout.css";
 
 export default function CheckoutPage() {
@@ -23,10 +24,18 @@ export default function CheckoutPage() {
     console.log("🧾 Kiểm tra sản phẩm đầu tiên:", products[0]);
 
         try {
+            const userStr = localStorage.getItem('user');
+            const user = userStr ? JSON.parse(userStr) : null;
+            if (!user) {
+                setMessage('Vui lòng đăng nhập để đặt hàng');
+                setLoading(false);
+                navigate('/login');
+                return;
+            }
             // Dữ liệu gửi đi
             const orderData = {
-                khach_hang_id: 1,
-                dia_chi_giao: "Chợ Long Điền, Huyện Long Điền, Bà Rịa - Vũng Tàu",
+                khach_hang_id: user.ma_kh,
+                dia_chi_giao: user.dia_chi || "Chợ Long Điền, Huyện Long Điền, Bà Rịa - Vũng Tàu",
                 phuong_thuc_tt: "Thanh toán khi nhận hàng",
                 products: products.map((item) => ({
                     ma_sp: item.id,
@@ -35,7 +44,7 @@ export default function CheckoutPage() {
                 })),
             };
             console.log("📦 Dữ liệu gửi đi:", orderData); 
-            const response = await fetch("http://127.0.0.1:8000/api/dathang/", {
+            const response = await fetch(`${API_BASE_URL}/dathang/`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -91,7 +100,7 @@ export default function CheckoutPage() {
                     <div key={item.id} className="checkout-item">
                         <div className="item-info">
                             <img
-                                src={`http://127.0.0.1:8000${item.hinh_anh}`}
+                                src={`${IMG_BASE_URL}${item.hinh_anh}`}
                                 alt={item.ten_sp}
                                 className="item-img"
                             />
