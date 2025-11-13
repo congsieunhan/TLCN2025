@@ -1,0 +1,15 @@
+# Python files to ignore
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+.env
+
+# Django/Media files
+/media/
+/backend/api/migrations/*
+/backend/api/data/
+/backend/api/scripts/
+
+# Node modules (for frontend)
+/node_modules

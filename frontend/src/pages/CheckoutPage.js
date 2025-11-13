@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { API_BASE_URL, IMG_BASE_URL } from "../config";
 import "./Checkout.css";
@@ -8,20 +8,47 @@ export default function CheckoutPage() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
+    const username = useMemo(() => {
+        try { return JSON.parse(localStorage.getItem('user'))?.ten_dang_nhap || null; } catch { return null; }
+    }, []);
+    const [addresses, setAddresses] = useState([]);
+    const [addrOpen, setAddrOpen] = useState(false);
+    const [selectedAddrId, setSelectedAddrId] = useState(null);
+    const [payment, setPayment] = useState("Thanh toán khi nhận hàng");
 
-    if (!state || !state.products) {
-        return <div>Không có sản phẩm nào để thanh toán.</div>;
-    }
-
-    const { products, totalPrice } = state;
+    // Không return sớm để không vi phạm rules-of-hooks; dùng giá trị mặc định
+    const { products = [], totalPrice = 0 } = state || {};
     const shippingFee = 1000;
     const grandTotal = totalPrice + shippingFee;
+
+    // 📮 Load địa chỉ của khách hàng
+    useEffect(() => {
+        if (!username) return;
+        fetch(`${API_BASE_URL}/address/?ten_dang_nhap=${username}`)
+            .then(r => r.json())
+            .then(data => {
+                const list = Array.isArray(data) ? data : [];
+                setAddresses(list);
+                const def = list.find(x => x.mac_dinh) || list[0] || null;
+                setSelectedAddrId(def ? def.id : null);
+                if (list.length === 0) {
+                    // Thông báo và chuyển sang trang thêm địa chỉ
+                    alert('Bạn chưa có địa chỉ giao hàng. Vui lòng thêm địa chỉ trước.');
+                    navigate('/account?tab=address');
+                }
+            })
+            .catch(() => setAddresses([]));
+    }, [username, navigate]);
+
+    const selectedAddr = useMemo(() => addresses.find(a => a.id === selectedAddrId) || null, [addresses, selectedAddrId]);
 
     // 🧾 Gửi yêu cầu đặt hàng đến backend
     const handleOrder = async () => {
         setLoading(true);
         setMessage("");
-    console.log("🧾 Kiểm tra sản phẩm đầu tiên:", products[0]);
+    if (products && products.length > 0) {
+        console.log("🧾 Kiểm tra sản phẩm đầu tiên:", products[0]);
+    }
 
         try {
             const userStr = localStorage.getItem('user');
@@ -32,11 +59,16 @@ export default function CheckoutPage() {
                 navigate('/login');
                 return;
             }
+            if (!selectedAddr) {
+                setMessage('Vui lòng chọn địa chỉ giao hàng');
+                setLoading(false);
+                return;
+            }
             // Dữ liệu gửi đi
             const orderData = {
                 khach_hang_id: user.ma_kh,
-                dia_chi_giao: user.dia_chi || "Chợ Long Điền, Huyện Long Điền, Bà Rịa - Vũng Tàu",
-                phuong_thuc_tt: "Thanh toán khi nhận hàng",
+                dia_chi_giao: [selectedAddr.dia_chi_chi_tiet, selectedAddr.phuong_xa, selectedAddr.tinh_tp].filter(Boolean).join(', '),
+                phuong_thuc_tt: payment,
                 products: products.map((item) => ({
                     ma_sp: item.id,
                     so_luong: item.so_luong,
@@ -56,8 +88,8 @@ export default function CheckoutPage() {
 
             if (response.ok && data.success) {
                 setMessage("🎉 Đặt hàng thành công! Mã đơn: " + data.ma_don_hang);
-                // Có thể chuyển hướng sau vài giây
-                setTimeout(() => navigate("/"), 2000);
+                // Điều hướng sang trang Đơn hàng của tôi
+                navigate("/orders");
             } else {
                 setMessage("❌ Lỗi khi đặt hàng: " + (data.error || "Không xác định"));
             }
@@ -74,17 +106,37 @@ export default function CheckoutPage() {
             {/* Địa chỉ nhận hàng */}
             <div className="checkout-section address-section">
                 <h3 className="section-title">📍 Địa Chỉ Nhận Hàng</h3>
-                <div className="address-box">
-                    <div className="address-info">
-                        <strong>cong hoang</strong> <span>(+84) 365 807 229</span>
+                {selectedAddr ? (
+                    <div className="address-box">
+                        <div className="address-info">
+                            <strong>{selectedAddr.ho_ten}</strong> <span>{selectedAddr.sdt}</span>
+                        </div>
+                        <p>
+                            {[selectedAddr.dia_chi_chi_tiet, selectedAddr.phuong_xa, selectedAddr.tinh_tp].filter(Boolean).join(', ')}{' '}
+                            {selectedAddr.mac_dinh && <span className="tag-default">Mặc Định</span>}{' '}
+                            <span className="link" onClick={()=> setAddrOpen(v=>!v)}>{addrOpen? 'Đóng' : 'Thay Đổi'}</span>
+                        </p>
+                        {addrOpen && (
+                            <div className="address-picker">
+                                {addresses.length === 0 ? (
+                                    <div className="text-muted">Bạn chưa có địa chỉ nào. Vui lòng thêm trong Tài khoản » Địa chỉ.</div>
+                                ) : (
+                                    addresses.map(a => (
+                                        <label key={a.id} className="addr-option">
+                                            <input type="radio" name="addr" checked={selectedAddrId===a.id} onChange={()=> setSelectedAddrId(a.id)} />
+                                            <div>
+                                                <div className="addr-line"><strong>{a.ho_ten}</strong> <span className="ms-2">{a.sdt}</span> {a.mac_dinh && <span className="tag-default ms-2">Mặc Định</span>}</div>
+                                                <div className="addr-line text-muted">{[a.dia_chi_chi_tiet, a.phuong_xa, a.tinh_tp].filter(Boolean).join(', ')}</div>
+                                            </div>
+                                        </label>
+                                    ))
+                                )}
+                            </div>
+                        )}
                     </div>
-                    <p>
-                        Chợ Long Điền, Khu Phố Long Phượng, Thị Trấn Long Điền, Huyện Long
-                        Điền, Bà Rịa - Vũng Tàu{" "}
-                        <span className="tag-default">Mặc Định</span>{" "}
-                        <span className="link">Thay Đổi</span>
-                    </p>
-                </div>
+                ) : (
+                    <div className="text-muted">Đang tải hoặc chưa có địa chỉ. Vui lòng thêm trong Tài khoản » Địa chỉ.</div>
+                )}
             </div>
 
             {/* Danh sách sản phẩm */}
@@ -96,7 +148,9 @@ export default function CheckoutPage() {
                     <span className="col-total">Thành tiền</span>
                 </div>
 
-                {products.map((item) => (
+                {products.length === 0 ? (
+                    <div className="text-muted" style={{padding: '12px 0'}}>Không có sản phẩm nào để thanh toán.</div>
+                ) : products.map((item) => (
                     <div key={item.id} className="checkout-item">
                         <div className="item-info">
                             <img
@@ -117,10 +171,10 @@ export default function CheckoutPage() {
                             </div>
                         </div>
 
-                        <div className="col-price">{item.don_gia.toLocaleString()}₫</div>
+                        <div className="col-price">{Number(item.don_gia).toLocaleString()}₫</div>
                         <div className="col-qty">{item.so_luong}</div>
                         <div className="col-total">
-                            {item.thanh_tien.toLocaleString()}₫
+                            {Number(item.thanh_tien).toLocaleString()}₫
                         </div>
                     </div>
                 ))}
@@ -151,8 +205,21 @@ export default function CheckoutPage() {
             {/* Phương thức thanh toán */}
             <div className="checkout-section payment-section">
                 <h4>Phương thức thanh toán</h4>
-                <div className="payment-method">
-                    <button className="payment-selected">Thanh toán khi nhận hàng</button>
+                <div className="payment-methods">
+                    {[
+                        'Thanh toán khi nhận hàng',
+                        'Chuyển khoản ngân hàng',
+                        'Ví MoMo',
+                        'Thẻ nội địa (ATM/NAPAS)',
+                        'Thẻ quốc tế (Visa/Master)'
+                    ].map(m => (
+                        <button key={m}
+                                type="button"
+                                className={`pay-btn ${payment===m? 'active':''}`}
+                                onClick={()=> setPayment(m)}>
+                            {m}
+                        </button>
+                    ))}
                 </div>
             </div>
 

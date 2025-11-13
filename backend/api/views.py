@@ -5,7 +5,7 @@ from django.utils import timezone
 from django.db import transaction
 import uuid
 from rest_framework.views import APIView
-from .models import SanPham, KhachHang, GioHang, ChiTietGio, DonHang, ChiTietDH, ThanhToan
+from .models import SanPham, KhachHang, GioHang, ChiTietGio, DonHang, ChiTietDH, ThanhToan, YeuThich
 from .serializers import SanPhamSerializer, ChiTietGioSerializer
 from django.db.models import Sum
 
@@ -63,6 +63,32 @@ def top_selling_products(request):
         return Response(results)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ==============================================================================
+# 📊 COUNTS CHO HEADER (Giỏ hàng + Yêu thích)
+# ==============================================================================
+
+@api_view(['GET'])
+def header_counts(request):
+    """Trả về cart_count (tổng số lượng trong giỏ) và wishlist_count cho user."""
+    username = request.query_params.get('ten_dang_nhap')
+    if not username:
+        return Response({"cart_count": 0, "wishlist_count": 0})
+    try:
+        kh = KhachHang.objects.get(ten_dang_nhap=username)
+        gio_hang, _ = GioHang.objects.get_or_create(khach_hang=kh)
+        items = ChiTietGio.objects.filter(gio_hang=gio_hang)
+        cart_count = sum((it.so_luong or 0) for it in items)
+        wishlist_count = YeuThich.objects.filter(khach_hang=kh).count()
+        return Response({"cart_count": cart_count, "wishlist_count": wishlist_count})
+    except KhachHang.DoesNotExist:
+        return Response({"cart_count": 0, "wishlist_count": 0})
+    except Exception as e:
+        return Response({"cart_count": 0, "wishlist_count": 0, "error": str(e)}, status=status.HTTP_200_OK)
+
+
+# (Địa chỉ và danh mục địa lý đã chuyển sang views_address.py)
 
 
 # ==============================================================================

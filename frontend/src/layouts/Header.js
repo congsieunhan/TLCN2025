@@ -3,10 +3,14 @@ import { Link, useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "./Header.css";
+import { API_BASE_URL } from "../config";
 import logo from "../assets/logo.png"; // import ảnh từ thư mục assets
 
 function Header() {
   const [user, setUser] = useState(null);
+  const [admin, setAdmin] = useState(null);
+  const [cartCount, setCartCount] = useState(0);
+  const [wishCount, setWishCount] = useState(0);
   const location = useLocation();
 
   useEffect(() => {
@@ -14,10 +18,40 @@ function Header() {
       // Lấy thông tin user từ localStorage khi component render hoặc khi location thay đổi
       const u = localStorage.getItem("user");
       setUser(u ? JSON.parse(u) : null);
+      const a = localStorage.getItem("admin");
+      setAdmin(a ? JSON.parse(a) : null);
     } catch (e) {
       setUser(null);
+      setAdmin(null);
     }
   }, [location]);
+
+  useEffect(() => {
+    // Fetch số lượng giỏ hàng và yêu thích khi user thay đổi hoặc route đổi
+    const fetchCounts = async () => {
+      try {
+        if (!user) { setCartCount(0); setWishCount(0); return; }
+        const res = await fetch(`${API_BASE_URL}/header/counts/?ten_dang_nhap=${encodeURIComponent(user.ten_dang_nhap)}`);
+        if (!res.ok) { setCartCount(0); setWishCount(0); return; }
+        const data = await res.json();
+        setCartCount(Number(data.cart_count || 0));
+        setWishCount(Number(data.wishlist_count || 0));
+      } catch {
+        setCartCount(0);
+        setWishCount(0);
+      }
+    };
+    fetchCounts();
+    // Realtime: lắng nghe thay đổi header_counts qua SSE
+    let es;
+    try {
+      if (user) {
+        es = new EventSource(`${API_BASE_URL}/stream/?channels=header_counts&ten_dang_nhap=${encodeURIComponent(user.ten_dang_nhap)}`);
+        es.addEventListener('header_counts', () => fetchCounts());
+      }
+    } catch {}
+    return () => { try { es && es.close(); } catch {} };
+  }, [user, location]);
 
   const handleLogout = () => {
     // Xóa user khỏi localStorage
@@ -25,6 +59,11 @@ function Header() {
     setUser(null);
     // Chuyển hướng về trang chủ
     window.location.href = "/";
+  };
+  const handleAdminLogout = () => {
+    try { localStorage.removeItem('admin'); } catch {}
+    setAdmin(null);
+    window.location.href = "/admin/login";
   };
   return (
     <nav className="navbar navbar-expand-lg header-navbar sticky-top">
@@ -72,14 +111,14 @@ function Header() {
               </Link>
             </li>
             <li className="nav-item dropdown">
-              <a className="nav-link dropdown-toggle menu-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <button className="nav-link dropdown-toggle menu-link btn btn-link" id="navbarDropdown" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                 More
-              </a>
+              </button>
               <ul className="dropdown-menu">
                 <li><Link className="dropdown-item" to="/about">About</Link></li>
-                <li><a className="dropdown-item" href="#">Another action</a></li>
+                <li><button className="dropdown-item" type="button">Another action</button></li>
                 <li><hr className="dropdown-divider" /></li>
-                <li><a className="dropdown-item" href="#">Something else here</a></li>
+                <li><button className="dropdown-item" type="button">Something else here</button></li>
               </ul>
             </li>
           </ul>
@@ -89,19 +128,35 @@ function Header() {
             {/* Cart */}
             <Link to="/cart" className="btn btn-outline-dark position-relative">
               <i className="bi bi-cart"></i>
-              <span className="header-badge badge bg-dark">3</span>
+              {cartCount > 0 && (
+                <span className="header-badge badge bg-dark">{cartCount}</span>
+              )}
             </Link>
 
             {/* Wishlist */}
             <button className="btn btn-outline-dark position-relative" type="button">
               <i className="bi bi-heart"></i>
-              <span className="header-badge badge bg-dark">5</span>
+              {wishCount > 0 && (
+                <span className="header-badge badge bg-dark">{wishCount}</span>
+              )}
             </button>
 
             {/* Orders */}
             <Link to="/orders" className="btn btn-outline-dark position-relative d-none d-lg-inline-flex">
               <i className="bi bi-clipboard-check"></i>
             </Link>
+
+            {/* Admin shortcut (only when admin logged in) */}
+            {admin && (
+              <Link to="/admin" className="btn btn-outline-warning position-relative d-none d-lg-inline-flex" title="Quản trị">
+                <i className="bi bi-shield-lock"></i>
+              </Link>
+            )}
+            {admin && (
+              <button className="btn btn-outline-warning d-none d-lg-inline-flex" title="Đăng xuất quản trị" onClick={handleAdminLogout}>
+                <i className="bi bi-box-arrow-right"></i>
+              </button>
+            )}
 
             {/* User */}
             {user ? (
@@ -111,11 +166,20 @@ function Header() {
                   <span className="ms-1 d-none d-sm-inline">{user.ten_dang_nhap}</span>
                 </button>
                 <ul className="dropdown-menu dropdown-menu-end">
-                  <li><span className="dropdown-item-text">Xin chào, {user.ten_dang_nhap}</span></li>
+                  <li>
+                    <Link className="dropdown-item" to="/account">
+                      <i className="bi bi-person-gear me-2"/> Tài khoản của tôi
+                    </Link>
+                  </li>
                   <li><hr className="dropdown-divider"/></li>
                   <li><button className="dropdown-item" onClick={handleLogout}>Đăng xuất</button></li>
                 </ul>
               </div>
+            ) : admin ? (
+              // Nếu chưa có user nhưng có admin -> hiện nút đăng xuất quản trị trên mobile
+              <button className="btn btn-outline-warning d-inline-flex d-lg-none" title="Đăng xuất quản trị" onClick={handleAdminLogout}>
+                <i className="bi bi-box-arrow-right"></i>
+              </button>
             ) : (
               <div className="btn-group">
                 <Link to="/login" className="btn btn-outline-dark" type="button">

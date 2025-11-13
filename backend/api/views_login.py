@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.utils import timezone
 from django.db import transaction, IntegrityError
-from .models import KhachHang, GioHang, OTPCode
+from .models import KhachHang, GioHang, OTPCode, QuanTri
 from rest_framework.permissions import AllowAny
 from django.contrib.auth.hashers import check_password
 from datetime import timedelta
@@ -131,37 +131,63 @@ def register_khach_hang(request):
 @authentication_classes([])
 @permission_classes([AllowAny])
 def login_khach_hang(request):
-    """Đăng nhập bằng tên_dang_nhap và mật khẩu."""
+    """Đăng nhập hợp nhất: Khách hàng hoặc Quản trị.
+    - Nếu là Khách hàng: trả về key 'user'
+    - Nếu là Quản trị/ Admin: trả về key 'admin'
+    """
     data = request.data or {}
     username = data.get("ten_dang_nhap")
     password = data.get("mat_khau")
     if not username or not password:
         return Response({"error": "Thiếu tên đăng nhập hoặc mật khẩu"}, status=status.HTTP_400_BAD_REQUEST)
 
+    kh = None
+    qt = None
     try:
         kh = KhachHang.objects.get(ten_dang_nhap=username)
     except KhachHang.DoesNotExist:
-        return Response({"error": "Tên đăng nhập hoặc mật khẩu không đúng"}, status=status.HTTP_400_BAD_REQUEST)
+        kh = None
+    try:
+        qt = QuanTri.objects.get(ten_dang_nhap=username)
+    except QuanTri.DoesNotExist:
+        qt = None
 
-    if not check_password(password, kh.mat_khau):
-        return Response({"error": "Tên đăng nhập hoặc mật khẩu không đúng"}, status=status.HTTP_400_BAD_REQUEST)
+    user_ok = kh and check_password(password, kh.mat_khau)
+    admin_ok = qt and check_password(password, qt.mat_khau)
 
-    GioHang.objects.get_or_create(khach_hang=kh)
-
-    return Response(
-        {
-            "message": "Đăng nhập thành công",
-            "user": {
-                "ma_kh": kh.ma_kh,
-                "ten_dang_nhap": kh.ten_dang_nhap,
-                "ho_ten": kh.ho_ten,
-                "email": kh.email,
-                "sdt": kh.sdt,
-                "dia_chi": kh.dia_chi,
+    if user_ok:
+        GioHang.objects.get_or_create(khach_hang=kh)
+        return Response(
+            {
+                "message": "Đăng nhập thành công",
+                "user": {
+                    "ma_kh": kh.ma_kh,
+                    "ten_dang_nhap": kh.ten_dang_nhap,
+                    "ho_ten": kh.ho_ten,
+                    "email": kh.email,
+                    "sdt": kh.sdt,
+                    "dia_chi": kh.dia_chi,
+                },
             },
-        },
-        status=status.HTTP_200_OK,
-    )
+            status=status.HTTP_200_OK,
+        )
+
+    if admin_ok:
+        return Response(
+            {
+                "message": "Đăng nhập quản trị thành công",
+                "admin": {
+                    "ma_qt": qt.ma_qt,
+                    "ten_dang_nhap": qt.ten_dang_nhap,
+                    "email": qt.email,
+                    "ho_ten": qt.ho_ten,
+                    "vai_tro": qt.vai_tro,
+                },
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    return Response({"error": "Tên đăng nhập hoặc mật khẩu không đúng"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["POST"])

@@ -1,0 +1,179 @@
+.account-sidebar .side-item {
+  width: 100%;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #eee;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.account-sidebar .side-item.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.account-content .form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.addr-cascader {
+  position: relative;
+}
+
+.addr-cascader-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 9999; /* Tăng z-index rất cao */
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  max-height: 400px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Đảm bảo container cha không cắt dropdown */
+.card.p-3.mb-3 {
+  overflow: visible !important;
+}
+
+.position-relative {
+  overflow: visible !important;
+}
+
+/* =============================
+   Single-input Address Picker
+   ============================= */
+.addr-picker { position: relative; }
+.addr-picker .picker-label {
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  background: #fff;
+  padding: 0 6px;
+  font-size: 12px;
+  color: #666;
+  z-index: 2;
+}
+.addr-picker .picker-input { cursor: pointer; }
+.addr-picker .picker-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 9999;
+  display: none;
+  max-height: 55vh;      /* giới hạn tổng chiều cao panel */
+  overflow: auto;        /* cuộn trong panel nếu vượt */
+}
+.addr-picker .picker-dropdown.show { display: block; }
+.addr-picker .picker-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 8px;
+}
+.addr-picker .picker-col {
+  height: 45vh;           /* khung gọn hơn để tránh tràn dưới */
+  overflow-y: auto;       /* cuộn bên trong khung */
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Đảm bảo card chứa form không cắt dropdown */
+.account-content { overflow: visible; }
+.account-container { overflow: visible; }
+.addr-picker .picker-col.prov { /* cột Tỉnh/TP */ }
+.addr-picker .picker-col.ward { /* cột Phường/Xã */ }
+.addr-picker .picker-col .list-group-item {
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
+/* Phần chứa tabs và nội dung */
+.addr-cascader-panel > .card.p-2.mt-1 {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  padding: 0.5rem !important; /* Đảm bảo padding nhỏ hơn */
+  margin-top: 0.25rem !important;
+}
+
+/* Tabs navigation - cố định phía trên */
+.addr-cascader-panel .d-flex.gap-2.mb-2 {
+  flex-shrink: 0; /* Không bị co lại */
+  margin-bottom: 0.5rem !important;
+}
+
+/* Mỗi danh sách chiếm toàn bộ không gian còn lại và có scroll */
+.addr-col {
+  flex: 1; /* Chiếm không gian còn lại */
+  overflow-y: auto; /* Scroll bên trong */
+  max-height: none;
+}
+
+/* Đảm bảo các item có chiều cao cố định */
+.addr-col .list-group-item {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.addr-col .list-group-item:hover {
+  background-color: #f8f9fa;
+}
+
+.addr-col .list-group-item.active {
+  background-color: #e9ecef;
+  color: #000;
+  font-weight: 500;
+}
+
+.addr-col .list-group-item:last-child {
+  border-bottom: none;
+}
+
+.addr-cascader {
+  position: relative;
+}
+
+.addr-cascader-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  z-index: 9999; /* Tăng z-index rất cao */
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  max-height: 400px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Đảm bảo container cha không cắt dropdown */
+.card.p-3.mb-3 {
+  overflow: visible !important;
+}
+
+.position-relative {
+  overflow: visible !important;
+}

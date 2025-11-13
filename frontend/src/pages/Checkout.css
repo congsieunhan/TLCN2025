@@ -24,6 +24,23 @@
   margin-top: 4px;
   line-height: 1.4;
 }
+.address-picker {
+  margin-top: 10px;
+  padding: 10px;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  max-height: 240px;
+  overflow: auto;
+}
+.addr-option {
+  display: flex;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px dashed #eee;
+}
+.addr-option:last-child { border-bottom: none; }
+.addr-line { font-size: 14px; }
 
 .tag-default {
   background: #eee;
@@ -146,18 +163,9 @@
   background: #fff9f9;
 }
 
-.payment-method {
-  margin-top: 10px;
-}
-
-.payment-selected {
-  background: #d0011b;
-  color: #fff;
-  padding: 8px 14px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
+.payment-methods { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+.pay-btn { border: 1px solid #ddd; background: #fff; padding: 8px 12px; border-radius: 4px; cursor: pointer; }
+.pay-btn.active { background: #d0011b; color: #fff; border-color: #d0011b; }
 
 .total-section {
   text-align: right;

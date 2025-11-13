@@ -19,15 +19,30 @@ const Login = () => {
         mat_khau: password,
       })
       .then((res) => {
-        const user = res.data?.user;
-        if (user) {
-          localStorage.setItem("user", JSON.stringify(user));
-          // Đăng nhập thành công: không cần thông báo, điều hướng ngay
-          navigate("/");
-        } else {
-          setError("Đăng nhập thất bại");
-          window.alert("Đăng nhập thất bại");
+        const data = res.data || {};
+        const user = data.user;
+        const admin = data.admin;
+        if (admin) {
+          // Giữ nguyên session user (nếu đang đăng nhập), set admin bổ sung
+          localStorage.setItem('admin', JSON.stringify(admin));
+          // Điều hướng theo vai trò
+          if ((admin.vai_tro || '').trim() === 'admin') {
+            navigate('/admin');
+          } else {
+            // Nhân viên
+            navigate('/admin/orders');
+          }
+          return;
         }
+        if (user) {
+          // Xóa session admin nếu có, set user
+          localStorage.removeItem('admin');
+          localStorage.setItem("user", JSON.stringify(user));
+          navigate("/");
+          return;
+        }
+        setError("Đăng nhập thất bại");
+        window.alert("Đăng nhập thất bại");
       })
       .catch((err) => {
         const msg = err?.response?.data?.error || "Đăng nhập thất bại";

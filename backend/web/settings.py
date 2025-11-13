@@ -111,6 +111,15 @@ DATABASES = {
     }
 }
 
+# Cho phép fallback nhanh sang SQLite trong môi trường dev nếu thiếu driver MySQL
+if os.getenv('USE_SQLITE') == '1':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

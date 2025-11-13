@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { API_BASE_URL, IMG_BASE_URL } from "../config";
 import "./OrdersPage.css";
@@ -6,24 +6,54 @@ import "./OrdersPage.css";
 export default function OrdersPage() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
-    const user = (() => {
-        try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
-    })();
+    const username = useMemo(() => {
+        try { return JSON.parse(localStorage.getItem('user'))?.ten_dang_nhap || null; } catch { return null; }
+    }, []);
 
     // 📦 Lấy danh sách đơn hàng từ backend
     useEffect(() => {
-        if (!user) { setLoading(false); return; }
-        fetch(`${API_BASE_URL}/donhang/?ten_dang_nhap=${user.ten_dang_nhap}`)
-            .then((res) => res.json())
-            .then((data) => {
-                setOrders(Array.isArray(data) ? data : []);
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error("Lỗi khi tải đơn hàng:", err);
-                setLoading(false);
+        const fetchOrders = () => {
+            if (!username) { setLoading(false); return; }
+            fetch(`${API_BASE_URL}/donhang/?ten_dang_nhap=${username}`)
+                .then((res) => res.json())
+                .then((data) => {
+                    setOrders(Array.isArray(data) ? data : []);
+                    setLoading(false);
+                })
+                .catch((err) => {
+                    console.error("Lỗi khi tải đơn hàng:", err);
+                    setLoading(false);
+                });
+        };
+        fetchOrders();
+        // Realtime: subscribe SSE để tự refresh khi có thay đổi đơn hàng/ vận chuyển
+        let es;
+        try {
+            if (username) {
+                es = new EventSource(`${API_BASE_URL}/stream/?channels=orders&ten_dang_nhap=${encodeURIComponent(username)}`);
+                es.addEventListener('orders', () => fetchOrders());
+            }
+        } catch {}
+        return () => { try { es && es.close(); } catch {} };
+    }, [username]);
+
+    const cancelOrder = async (ma_dh) => {
+        if (!username) { alert('Vui lòng đăng nhập'); return; }
+        if (!window.confirm(`Hủy đơn ${ma_dh}?`)) return;
+        try {
+            const res = await fetch(`${API_BASE_URL}/donhang/cancel/`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ten_dang_nhap: username, ma_dh })
             });
-    }, [user]);
+            const data = await res.json();
+            if (!res.ok) { alert(data.error || 'Không thể hủy đơn'); return; }
+            // Tải lại đơn hàng
+            setLoading(true);
+            fetch(`${API_BASE_URL}/donhang/?ten_dang_nhap=${username}`)
+              .then(r=>r.json()).then(d=> setOrders(Array.isArray(d)? d : []))
+              .finally(()=> setLoading(false));
+        } catch (e) { alert('Không thể kết nối máy chủ'); }
+    };
 
     // 💬 Hàm xử lý đánh giá từng sản phẩm
     const handleReview = async (ma_sp, ten_sp) => {
@@ -36,12 +66,12 @@ export default function OrdersPage() {
         const noi_dung = prompt("📝 Nhập nội dung đánh giá của bạn (tuỳ chọn):");
 
         try {
-            if (!user) { alert('Vui lòng đăng nhập'); return; }
+            if (!username) { alert('Vui lòng đăng nhập'); return; }
             const res = await fetch(`${API_BASE_URL}/danh-gia/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    ten_dang_nhap: user.ten_dang_nhap,
+                    ten_dang_nhap: username,
                     ma_sp,
                     so_sao,
                     noi_dung,
@@ -63,7 +93,7 @@ export default function OrdersPage() {
     if (loading) return <div className="loading">⏳ Đang tải đơn hàng...</div>;
 
     // ❌ Không có đơn hàng
-    if (!user) {
+    if (!username) {
         return (
             <div className="no-orders">
                 <h3>Vui lòng đăng nhập để xem đơn hàng</h3>
@@ -103,6 +133,9 @@ export default function OrdersPage() {
                         >
                             {order.trang_thai}
                         </span>
+                        {order.trang_thai === 'Chờ xử lý' && (
+                          <button className="review-btn" style={{marginLeft: 8}} onClick={()=> cancelOrder(order.ma_dh)}>Hủy đơn</button>
+                        )}
                     </div>
 
                     <div className="order-info">
@@ -118,6 +151,20 @@ export default function OrdersPage() {
                             <strong>Địa chỉ giao:</strong> {order.dia_chi_giao}
                         </p>
                     </div>
+
+                    {/* Thông tin vận chuyển (nếu có) */}
+                    {order.van_chuyen && (
+                        <div className="shipping-box" style={{marginTop: 8}}>
+                            <div>
+                                <strong>Vận chuyển:</strong> {order.van_chuyen.trang_thai || '—'}
+                            </div>
+                            <div className="shipping-detail" style={{gap: 8, flexWrap: 'wrap'}}>
+                                <span><strong>Đơn vị:</strong> {order.van_chuyen.nha_vc || '—'}</span>
+                                <span><strong>Mã vận đơn:</strong> {order.van_chuyen.ma_van_don || '—'}</span>
+                                <span><strong>Ngày giao dự kiến:</strong> {order.van_chuyen.ngay_du_kien ? new Date(order.van_chuyen.ngay_du_kien).toLocaleDateString() : '—'}</span>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Chi tiết sản phẩm trong đơn */}
                     <div className="order-products">
@@ -135,6 +182,24 @@ export default function OrdersPage() {
                                         </p>
                                         <strong>{Number(ct.thanh_tien).toLocaleString()}₫</strong>
                                     </div>
+
+                                    {ct.bao_hanh && (
+                                        <div className="text-muted small" style={{marginTop: 6}}>
+                                            <div>
+                                                <strong>Bảo hành:</strong> {ct.bao_hanh.policy?.bao_hanh_thang || 0} tháng
+                                                {ct.bao_hanh.policy?.doi_moi_ngay ? ` • Đổi mới ${ct.bao_hanh.policy?.doi_moi_ngay} ngày` : ''}
+                                            </div>
+                                            <div>
+                                                Bắt đầu: {new Date(ct.bao_hanh.ngay_bat_dau).toLocaleString()}
+                                            </div>
+                                            <div>
+                                                Đổi mới đến: {new Date(ct.bao_hanh.doi_moi_den_ngay).toLocaleDateString()} • Bảo hành đến: {new Date(ct.bao_hanh.bao_hanh_den_ngay).toLocaleDateString()}
+                                            </div>
+                                            {ct.bao_hanh.policy?.mo_ta && (
+                                                <div>Chính sách: {ct.bao_hanh.policy.mo_ta}</div>
+                                            )}
+                                        </div>
+                                    )}
 
                                     {order.trang_thai === "Đã hoàn thành" && (
                                         <button

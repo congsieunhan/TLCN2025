@@ -2,12 +2,13 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { Pagination } from "react-bootstrap";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./Shop.css"; // Đảm bảo đã import CSS
 import { API_BASE_URL, IMG_BASE_URL, IMG_PLACEHOLDER_SMALL as IMG_PLACEHOLDER } from "../config";
 
 
 export default function Shop() {
+  const navigate = useNavigate();
   const [phones, setPhones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,6 +60,21 @@ export default function Shop() {
           alert("Lỗi kết nối hoặc lỗi không xác định!");
         }
       });
+  }
+
+  // ⚡ Mua ngay: gọi preview từ backend rồi điều hướng Checkout
+  async function muaNgay(productId) {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/buynow/`, { params: { ma_sp: productId, so_luong: 1 } });
+      const payload = res.data || {};
+      if (!payload.products || payload.products.length === 0) {
+        alert('Không thể tạo dữ liệu mua ngay');
+        return;
+      }
+      navigate('/checkout', { state: { products: payload.products, totalPrice: payload.totalPrice } });
+    } catch (e) {
+      alert(e?.response?.data?.error || 'Không thể mua ngay');
+    }
   }
 
   // 📦 Gọi API lấy danh sách sản phẩm
@@ -259,7 +275,7 @@ export default function Shop() {
                       <button className="btn btn-outline-danger w-100 mb-2">
                         <i className="bi bi-heart-fill me-2"></i> Yêu thích
                       </button>
-                      <button className="btn btn-warning w-100" disabled={phone.quantity === 0}>
+                      <button className="btn btn-warning w-100" disabled={phone.quantity === 0} onClick={() => muaNgay(phone.id)}>
                         <i className="bi bi-lightning-fill me-2"></i> Mua ngay
                       </button>
                     </div>

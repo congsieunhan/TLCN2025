@@ -10,6 +10,11 @@ import ForgotPassword from "./pages/ForgotPassword.js";
 import Cart from "./pages/Cart.js";
 import CheckoutPage from "./pages/CheckoutPage.js";
 import OrdersPage from "./pages/OrdersPage";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminOrders from "./pages/AdminOrders";
+import AdminProducts from "./pages/AdminProducts";
+import AdminStaffs from "./pages/AdminStaffs";
+import AccountPage from "./pages/AccountPage";
 function App() {
   return (
     <div>
@@ -24,6 +29,12 @@ function App() {
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/account" element={<AccountPage />} />
+        <Route path="/admin/login" element={<Login />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/orders" element={<AdminOrders />} />
+        <Route path="/admin/products" element={<AdminProducts />} />
+        <Route path="/admin/staffs" element={<AdminStaffs />} />
       </Routes>
 
       <div style={{ textAlign: "center", padding: "20px", marginTop: "120px" }}>

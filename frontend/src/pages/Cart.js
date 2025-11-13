@@ -323,7 +323,7 @@ export default function CartPage() {
       if (res.ok) {
         alert(result.message || "Đã xóa sản phẩm");
         fetchCart();
-        setSelectedItems((prev) => prev.filter((x) => x !== cartItemId));
+        setSelectedItems((prev) => prev.filter((x) => x !== ma_sp));
       } else {
         alert(result.error || "Lỗi khi xóa sản phẩm");
       }
@@ -373,19 +373,19 @@ export default function CartPage() {
     }
   };
 
-  // ✅ Chọn từng sản phẩm
-  const handleSelect = (cartItemId) => {
+  // ✅ Chọn từng sản phẩm (theo mã sản phẩm để duy nhất)
+  const handleSelect = (ma_sp) => {
     setSelectedItems((prev) =>
-      prev.includes(cartItemId)
-        ? prev.filter((x) => x !== cartItemId)
-        : [...prev, cartItemId]
+      prev.includes(ma_sp)
+        ? prev.filter((x) => x !== ma_sp)
+        : [...prev, ma_sp]
     );
   };
 
   // ✅ Chọn tất cả
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedItems(cartItems.map((item) => item.id));
+      setSelectedItems(cartItems.map((item) => item.san_pham.ma_sp));
     } else {
       setSelectedItems([]);
     }
@@ -396,7 +396,7 @@ export default function CartPage() {
     const giaGoc = parseFloat(item.san_pham.gia);
     const giam = item.san_pham.giam_phan_tram || 0;
     const giaSauGiam = giaGoc * (1 - giam / 100);
-    return selectedItems.includes(item.id)
+    return selectedItems.includes(item.san_pham.ma_sp)
       ? sum + item.so_luong * giaSauGiam
       : sum;
   }, 0);
@@ -416,7 +416,7 @@ export default function CartPage() {
     }
 
     const selectedProducts = cartItems
-      .filter((item) => selectedItems.includes(item.id))
+      .filter((item) => selectedItems.includes(item.san_pham.ma_sp))
       .map((item) => {
         const giaGoc = parseFloat(item.san_pham.gia);
         const giam = item.san_pham.giam_phan_tram || 0;
@@ -475,15 +475,15 @@ export default function CartPage() {
             const giaGoc = parseFloat(item.san_pham.gia);
             const giam = item.san_pham.giam_phan_tram || 0;
             const giaSauGiam = giaGoc * (1 - giam / 100);
-            const selected = selectedItems.includes(item.id);
+            const selected = selectedItems.includes(item.san_pham.ma_sp);
 
             return (
-              <div key={item.id || i} className="cart-item-row">
-                <input
-                  type="checkbox"
-                  checked={selected}
-                  onChange={() => handleSelect(item.id)}
-                />
+          <div key={item.san_pham.ma_sp || i} className="cart-item-row">
+            <input
+              type="checkbox"
+              checked={selected}
+              onChange={() => handleSelect(item.san_pham.ma_sp)}
+            />
 
                 <div className="cart-item">
                   <img

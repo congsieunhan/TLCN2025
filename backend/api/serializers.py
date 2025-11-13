@@ -10,6 +10,8 @@ from .models import (
     ThanhToan,
     DanhGia,
     YeuThich,
+    DiaChiNhanHang,
+    BaoHanh,
     # QuanTri, 
     # KhuyenMai, 
     # Banner, 
@@ -29,13 +31,27 @@ class HinhAnhSanPhamSerializer(serializers.ModelSerializer):
 class SanPhamSerializer(serializers.ModelSerializer):
     # Lấy tất cả ảnh liên quan thông qua related_name='hinh_anh_list'
     hinh_anh_list = HinhAnhSanPhamSerializer(many=True, read_only=True)
+    bao_hanh = serializers.SerializerMethodField()
 
     class Meta:
         model = SanPham
         fields = [
             'ma_sp', 'ten_sp', 'hang_sx', 'gia', 'thong_so',
-            'ngay_nhap', 'tinh_trang', 'so_luong_ton', 'hinh_anh_list'
+            'ngay_nhap', 'tinh_trang', 'so_luong_ton', 'hinh_anh_list', 'bao_hanh'
         ]
+
+    def get_bao_hanh(self, obj: SanPham):
+        try:
+            bh: BaoHanh = obj.bao_hanh
+        except Exception:
+            bh = None
+        if not bh:
+            return None
+        return {
+            'doi_moi_ngay': bh.doi_moi_ngay,
+            'bao_hanh_thang': bh.bao_hanh_thang,
+            'mo_ta': bh.mo_ta or ''
+        }
 
 # ==============================================================================
 # 🛒 GIỎ HÀNG (Cart)
@@ -99,3 +115,16 @@ class YeuThichSerializer(serializers.ModelSerializer):
     class Meta:
         model = YeuThich
         fields = ['san_pham_ten', 'ngay_them']
+
+
+# ==============================================================================
+# 🏠 ĐỊA CHỈ NHẬN HÀNG (Addresses)
+# ==============================================================================
+
+class DiaChiNhanHangSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiaChiNhanHang
+        fields = [
+            'id', 'ho_ten', 'sdt', 'tinh_tp', 'phuong_xa',
+            'dia_chi_chi_tiet', 'mac_dinh', 'created_at', 'updated_at'
+        ]

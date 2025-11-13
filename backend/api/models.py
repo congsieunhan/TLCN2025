@@ -40,10 +40,32 @@ class SanPham(models.Model):
     def __str__(self):
         return self.ten_sp
 
+    def save(self, *args, **kwargs):
+        # Tự động đồng bộ tình trạng theo tồn kho
+        try:
+            qty = int(self.so_luong_ton or 0)
+        except Exception:
+            qty = 0
+        self.tinh_trang = 'Hết hàng' if qty <= 0 else 'Còn hàng'
+        super().save(*args, **kwargs)
+
 class HinhAnhSanPham(models.Model):
     san_pham = models.ForeignKey(SanPham, on_delete=models.CASCADE, related_name='hinh_anh_list')
     hinh_anh = models.ImageField(upload_to='sanpham/', blank=True, null=True)
     mo_ta = models.CharField(max_length=255, blank=True, null=True)
+
+# -------------------------------
+# 🛡️ BẢO HÀNH SẢN PHẨM
+# -------------------------------
+class BaoHanh(models.Model):
+    """Chính sách bảo hành/đổi trả theo từng sản phẩm."""
+    san_pham = models.OneToOneField(SanPham, on_delete=models.CASCADE, related_name='bao_hanh')
+    doi_moi_ngay = models.IntegerField(default=30)        # số ngày đổi mới
+    bao_hanh_thang = models.IntegerField(default=12)      # số tháng bảo hành sửa chữa
+    mo_ta = models.TextField(blank=True, null=True)       # mô tả chi tiết chính sách
+
+    def __str__(self):
+        return f"BH {self.san_pham.ten_sp}: {self.doi_moi_ngay}d/{self.bao_hanh_thang}m"
 # -------------------------------
 # 🛒 GIỎ HÀNG
 # -------------------------------
@@ -141,6 +163,25 @@ class YeuThich(models.Model):
 
 
 # -------------------------------
+# 🏠 ĐỊA CHỈ NHẬN HÀNG
+# -------------------------------
+class DiaChiNhanHang(models.Model):
+    khach_hang = models.ForeignKey(KhachHang, on_delete=models.CASCADE, related_name='dia_chis')
+    ho_ten = models.CharField(max_length=100)
+    sdt = models.CharField(max_length=20)
+    tinh_tp = models.CharField(max_length=100)
+    phuong_xa = models.CharField(max_length=100)
+    dia_chi_chi_tiet = models.CharField(max_length=255)
+    mac_dinh = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        parts = [self.dia_chi_chi_tiet, self.phuong_xa, self.tinh_tp]
+        return f"{self.ho_ten} - "+ ", ".join([p for p in parts if p])
+
+
+# -------------------------------
 # 🧑‍💼 QUẢN TRỊ
 # -------------------------------
 class QuanTri(models.Model):
@@ -149,7 +190,11 @@ class QuanTri(models.Model):
     email = models.EmailField(unique=True)
     ten_dang_nhap = models.CharField(max_length=50, unique=True)
     mat_khau = models.CharField(max_length=255)
-    vai_tro = models.CharField(max_length=50, default='admin')
+    VAI_TRO_CHOICES = (
+        ('admin', 'Admin'),
+        ('nhan_vien', 'Nhân viên cửa hàng'),
+    )
+    vai_tro = models.CharField(max_length=50, choices=VAI_TRO_CHOICES, default='admin')
 
     def save(self, *args, **kwargs):
         if not self.mat_khau.startswith('pbkdf2_'):
@@ -203,6 +248,26 @@ class BaoCao(models.Model):
 
     def __str__(self):
         return f"Báo cáo {self.loai_bao_cao} - {self.thoi_gian.strftime('%d/%m/%Y')}"
+
+
+# -------------------------------
+# 🚚 VẬN CHUYỂN (Theo dõi trạng thái đơn hàng)
+# -------------------------------
+class VanChuyen(models.Model):
+    """Theo dõi trạng thái vận chuyển của một đơn hàng.
+    Một đơn hàng có một bản ghi vận chuyển kèm các thông tin hiển thị cho khách hàng.
+    """
+    don_hang = models.OneToOneField(DonHang, on_delete=models.CASCADE, related_name='van_chuyen')
+    trang_thai = models.CharField(max_length=50, default='Chờ lấy hàng')  # Ví dụ: Chờ lấy hàng, Đang giao, Giao thành công, Đã hủy
+    nha_vc = models.CharField(max_length=100, blank=True, null=True)      # Đơn vị vận chuyển (GHN, GHTK, VNPost...)
+    ma_van_don = models.CharField(max_length=64, blank=True, null=True)   # Mã vận đơn (nếu có)
+    ngay_du_kien = models.DateField(blank=True, null=True)                # Ngày giao dự kiến
+    ngay_giao_thanh_cong = models.DateTimeField(blank=True, null=True)    # Mốc bắt đầu bảo hành
+    ghi_chu = models.TextField(blank=True, null=True)
+    cap_nhat_cuoi = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"VC {self.don_hang.ma_dh} - {self.trang_thai}"
 
 # -------------------------------
 # 🔐 OTP (Xác thực SĐT)

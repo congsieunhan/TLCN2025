@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import "../App.css";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL, IMG_BASE_URL, IMG_PLACEHOLDER_SMALL as IMG_PLACEHOLDER } from "../config";
 import "./Home.css";
@@ -11,6 +11,7 @@ import sl1 from "../assets/1.jpg";
 import sl2 from "../assets/2.jpg";
 import sl3 from "../assets/3.jpg";
 export default function Home() {
+    const navigate = useNavigate();
     const [topProducts, setTopProducts] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -131,7 +132,16 @@ export default function Home() {
                                         <div className="fp-sold">Đã bán {p.sold}</div>
                                     </div>
                                     <div className="fp-actions">
-                                        <Link to={`/detail/${p.id}`} className="fp-btn">Mua ngay</Link>
+                                        <button className="fp-btn" onClick={async ()=>{
+                                            try {
+                                                const res = await axios.get(`${API_BASE_URL}/buynow/`, { params: { ma_sp: p.id, so_luong: 1 } });
+                                                const payload = res.data || {};
+                                                if (!payload.products || payload.products.length === 0) { alert('Không thể mua ngay'); return; }
+                                                navigate('/checkout', { state: { products: payload.products, totalPrice: payload.totalPrice } });
+                                            } catch (e) {
+                                                alert(e?.response?.data?.error || 'Không thể mua ngay');
+                                            }
+                                        }}>Mua ngay</button>
                                         <button className="fp-icon-btn" onClick={() => addToCart(p.id, p.name)}>
                                             <i className="bi bi-cart"></i>
                                         </button>
